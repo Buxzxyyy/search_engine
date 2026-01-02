@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltSearch | Search Engine System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: '#6366f1', darkBg: '#020617', darkCard: '#0f172a' }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.5s ease; scroll-behavior: smooth; overflow-x: hidden; }
+        
+        /* Navbar Light Mode*/
+        .glass { backdrop-filter: blur(15px); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .light .glass { 
+            background: rgba(255, 255, 255, 0.8); 
+            border-bottom: 2px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
+        }
+
+        /* Full Animations Setup */
+        .hover-lift { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .hover-lift:hover { transform: translateY(-10px) scale(1.02); }
+        
+        .nav-item { position: relative; overflow: hidden; }
+        .nav-item::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: #6366f1; transition: 0.3s; }
+        .nav-item:hover::after { width: 100%; }
+
+        /* Smooth Entry Animation */
+        #main-content { opacity: 0; animation: reveal 1s forwards; }
+        @keyframes reveal { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Animasi berputar pelan untuk icon */
+        .spin-slow { animation: spin 8s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Mobile Menu Overlay */
+        #mobile-menu { transition: transform 0.3s ease-in-out; transform: translateX(100%); }
+        #mobile-menu.active { transform: translateX(0); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkBg text-slate-900 dark:text-slate-100">
+
+    <nav class="fixed top-0 w-full z-50 glass px-6 py-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-2 group cursor-pointer" onclick="window.location.href='/'">
+            <div class="p-2 bg-primary rounded-lg group-hover:rotate-[360deg] transition-transform duration-700">
+                <i class="fa-solid fa-bolt text-white"></i>
+            </div>
+            <span class="text-xl font-extrabold tracking-tighter">Volt<span class="text-primary group-hover:tracking-widest transition-all">Search</span></span>
+        </div>
+        
+        <div class="hidden md:flex items-center gap-8 text-sm font-semibold italic">
+            <a href="/" class="nav-item text-primary py-1">Home</a>
+            <a href="#about" class="nav-item hover:text-primary transition-all py-1">About</a>
+            <a href="#stats" class="nav-item hover:text-primary transition-all py-1">Analytics</a>
+            <a href="#docs" class="nav-item hover:text-primary transition-all py-1">Library</a>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-indigo-500 dark:text-yellow-400 hover:scale-110 active:scale-90 transition-all">
+                <i id="themeIcon" class="fa-solid fa-moon"></i>
+            </button>
+            <button onclick="toggleMobileMenu()" class="md:hidden text-xl text-primary"><i class="fa-solid fa-bars-staggered"></i></button>
+        </div>
+    </nav>
+
+    <div id="mobile-menu" class="fixed inset-0 z-[60] bg-white dark:bg-darkBg flex flex-col items-center justify-center gap-8 md:hidden">
+        <button onclick="toggleMobileMenu()" class="absolute top-6 right-6 text-2xl"><i class="fa-solid fa-times"></i></button>
+        <a href="/" onclick="toggleMobileMenu()" class="text-2xl font-bold italic">Home</a>
+        <a href="#about" onclick="toggleMobileMenu()" class="text-2xl font-bold italic">About</a>
+        <a href="#stats" onclick="toggleMobileMenu()" class="text-2xl font-bold italic">Analytics</a>
+        <a href="#docs" onclick="toggleMobileMenu()" class="text-2xl font-bold italic">Library</a>
+    </div>
+
+    <div id="main-content">
+        <header class="pt-44 pb-24 px-4 text-center relative overflow-hidden">
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-4 tracking-tight" data-aos="zoom-in" data-aos-duration="1000">
+                Discover <span class="text-primary italic inline-block hover:rotate-2 transition-transform cursor-default">Knowledge.</span>
+            </h1>
+            <p class="max-w-2xl mx-auto text-slate-500 dark:text-slate-400 mb-10 text-lg leading-relaxed italic" data-aos="fade-up" data-aos-delay="200">
+                Solusi pencarian dokumen cerdas berbasis Information Retrieval yang mengintegrasikan ekstraksi teks database secara real-time untuk akurasi data.
+            </p>
+            
+            <form method="POST" id="searchForm" class="max-w-2xl mx-auto relative group mb-10" data-aos="fade-up" data-aos-delay="400">
+                <div class="relative flex">
+                    <input type="text" name="query" value="{{ query }}" placeholder="Cari dokumen anda..." required
+                        class="w-full bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-800 rounded-2xl py-6 pl-14 pr-32 focus:ring-4 focus:ring-primary/20 shadow-2xl outline-none transition-all">
+                    <i class="fa-solid fa-magnifying-glass absolute left-6 top-7 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                    <button type="submit" class="absolute right-3 top-3 bottom-3 px-8 bg-primary text-white font-bold rounded-xl hover:bg-indigo-700 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-95">
+                        Cari
+                    </button>
+                </div>
+            </form>
+        </header>
+
+        <main class="max-w-5xl mx-auto px-4 pb-24">
+            {% if query %}
+                {% if results %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+                        {% for res in results %}
+                        <div class="bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-800 p-8 rounded-[2rem] hover:border-primary hover-lift shadow-sm hover:shadow-xl transition-all" 
+                             data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-[10px] font-black text-primary bg-primary/10 px-3 py-1 rounded-full tracking-widest uppercase">SCORE: {{ res.score }}</span>
+                                <i class="fa-solid fa-file-lines text-slate-300"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">{{ res.filename }}</h3>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 line-clamp-3 italic leading-relaxed">"{{ res.snippet }}"</p>
+                            <a href="{{ url_for('open_document', filename=res.filename) }}" target="_blank" class="text-xs font-black text-primary flex items-center gap-2 group">
+                                LIHAT DOKUMEN <i class="fa-solid fa-circle-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="stats" class="bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-800 p-10 rounded-[2.5rem] mb-24 shadow-inner" data-aos="flip-up">
+                        <div class="mb-8 text-center md:text-left">
+                            <h3 class="font-bold text-2xl italic">Relevancy Bar Analytics</h3>
+                            <p class="text-sm text-slate-400">Distribusi skor kemiripan untuk kueri: "{{ query }}"</p>
+                        </div>
+                        <canvas id="resultChart" height="120"></canvas>
+                    </div>
+                {% else %}
+                    <div class="flex flex-col items-center justify-center py-24 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem] mb-24" data-aos="zoom-in">
+                        <i class="fa-solid fa-ghost text-6xl text-slate-300 mb-6 animate-bounce"></i>
+                        <h3 class="text-2xl font-extrabold mb-2 text-center">Data Tidak Ditemukan</h3>
+                        <p class="text-slate-500 italic">Tidak ditemukan kecocokan untuk "{{ query }}"</p>
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            <section id="about" class="py-24 border-t border-slate-200 dark:border-slate-800" data-aos="fade-up">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                    <div data-aos="fade-right">
+                        <h2 class="text-4xl font-extrabold mb-6">Tentang <span class="text-primary italic">VoltSearch</span></h2>
+                        <p class="text-slate-500 dark:text-slate-400 leading-relaxed text-lg mb-6">Mesin pencari berbasis IR yang mensimulasikan cara kerja search engine profesional dalam memproses bahasa alami.</p>
+                        <div class="p-6 bg-white dark:bg-darkCard rounded-2xl border-l-8 border-primary shadow-sm hover-lift">
+                            <p class="italic font-medium text-sm">"Menggunakan algoritma pembobotan kata TF-IDF dan perhitungan kemiripan Cosine Similarity."</p>
+                        </div>
+                    </div>
+                    <div class="bg-primary/5 p-10 rounded-[3rem] border border-primary/10 relative" data-aos="fade-left">
+                        <i class="fa-solid fa-gear text-6xl text-primary/20 absolute -top-8 -right-8 spin-slow"></i>
+                        <h4 class="font-bold mb-6 uppercase tracking-[0.2em] text-xs text-primary">Technical Stack</h4>
+                        <ul class="space-y-4 font-bold">
+                            <li class="flex items-center gap-4 hover:translate-x-2 transition-transform text-sm"><i class="fa-solid fa-check-double text-primary"></i> Sastrawi Stemmer (Indonesian NLP)</li>
+                            <li class="flex items-center gap-4 hover:translate-x-2 transition-transform text-sm"><i class="fa-solid fa-check-double text-primary"></i> NLTK Stopwords Removal</li>
+                            <li class="flex items-center gap-4 hover:translate-x-2 transition-transform text-sm"><i class="fa-solid fa-check-double text-primary"></i> Scikit-Learn Vectorizer</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="docs" class="py-24 border-t border-slate-200 dark:border-slate-800">
+                <div class="text-center mb-16" data-aos="fade-up">
+                    <h2 class="text-4xl font-extrabold">Informasi <span class="text-primary italic">Database</span></h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {% for item in [
+                        {'icon': 'database', 'title': 'MySQL Source', 'desc': 'Data terintegrasi database SQL.'},
+                        {'icon': 'folder-tree', 'title': 'Local Storage', 'desc': 'Indexing file fisik otomatis.'},
+                        {'icon': 'bolt-lightning', 'title': 'Hybrid Search', 'desc': 'Kecepatan respon maksimal.'}
+                    ] %}
+                    <div class="p-8 bg-white dark:bg-darkCard rounded-[2rem] border border-slate-200 dark:border-slate-800 hover-lift text-center group" data-aos="zoom-in" data-aos-delay="{{ loop.index0 * 150 }}">
+                        <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-primary group-hover:text-white transition-all">
+                            <i class="fa-solid fa-{{ item.icon }} text-2xl"></i>
+                        </div>
+                        <h4 class="font-bold text-xl mb-2">{{ item.title }}</h4>
+                        <p class="text-sm text-slate-500 italic">{{ item.desc }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="bg-white dark:bg-[#010413] pt-20 pb-10 border-t border-slate-200 dark:border-slate-800 transition-colors">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center gap-2 mb-6">
+                        <div class="p-2 bg-primary rounded-lg text-white"><i class="fa-solid fa-bolt"></i></div>
+                        <span class="text-2xl font-black italic tracking-tighter">VoltSearch</span>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed mb-6 italic">
+                        Membantu Anda menemukan informasi terdalam dari gudang dokumen digital dengan presisi algoritma Information Retrieval terkini.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm"><i class="fa-brands fa-github"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm"><i class="fa-brands fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 text-primary uppercase tracking-widest text-xs">Resources</h4>
+                    <ul class="space-y-4 text-sm font-semibold opacity-60">
+                        <li><a href="#" class="hover:opacity-100 hover:text-primary transition-all">Documentation</a></li>
+                        <li><a href="#" class="hover:opacity-100 hover:text-primary transition-all">API Reference</a></li>
+                        <li><a href="#" class="hover:opacity-100 hover:text-primary transition-all">Status</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 text-primary uppercase tracking-widest text-xs">Legal</h4>
+                    <ul class="space-y-4 text-sm font-semibold opacity-60">
+                        <li><a href="#" class="hover:opacity-100 hover:text-primary transition-all">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:opacity-100 hover:text-primary transition-all">Terms of Service</a></li>
+                        <li><a href="#" class="hover:opacity-100 hover:text-primary transition-all">Cookie Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-100 dark:border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
+                <p class="text-[10px] font-bold tracking-[0.4em] opacity-30 uppercase">&copy; 2026 VOLTSEARCH INNOVATION LAB. ALL RIGHTS RESERVED.</p>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] font-bold opacity-40 uppercase tracking-widest">System Operational</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+
+        AOS.init({ duration: 1000, once: true, easing: 'ease-out-back' });
+
+        // Logic Anti-Relog
+        if ( window.history.replaceState ) {
+            window.history.replaceState( null, null, window.location.href );
+        }
+
+        // Toggle Hamburger Menu
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('active');
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            localStorage.theme = isDark ? 'dark' : 'light';
+        }
+
+        {% if results %}
+        const ctx = document.getElementById('resultChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ labels|tojson }},
+                datasets: [{
+                    label: 'Similarity Score',
+                    data: {{ scores|tojson }},
+                    backgroundColor: '#6366f1',
+                    borderRadius: 12,
+                    barThickness: 35
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 2500, easing: 'easeOutQuart' },
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(100,100,100,0.05)' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }
+                }
+            }
+        });
+        {% endif %}
+
+        if (localStorage.theme === 'light') toggleTheme();
+    </script>
+</body>
+</html>
